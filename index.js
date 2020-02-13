@@ -14,6 +14,7 @@ let profileData;
 let profileHTML;
 
 // Run Inquirer to prompt user questions
+// Then get data from GitHub and call function to print to PDF
 inquirer.prompt([
   {
     message: 'Enter team member name:',
@@ -68,19 +69,42 @@ function renderProfileData(url) {
     userInfo = res.data;
     username = userInfo.login;
     getProfileStars(starsURL);
-    makeHTML();
-    //writeToHTML();       
-    printPDF(username, profileHTML);
   });
 }
 
+// Function to get profile stars then call HTML & PDF functions
 function getProfileStars(url) {
   axios.get(url)
   .then((res) => {
     numStars = res.data.length;
+    makeHTML();
+    printPDF(username, profileHTML);
   })
 }
 
+// Function to print HTML to PDF using puppeteer
+async function printPDF(username, html) {
+  try {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    await page.setContent(html);
+    await page.emulateMedia('screen');
+    await page.pdf({
+      path: `${username}-profile.pdf`,
+      format: 'A4',
+      printBackground: true
+    })
+
+    console.log(`GitHub profile info written to ${username}-profile.pdf`);
+    await browser.close();
+    process.exit();
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Function to write HTML from profile data
 function makeHTML() {
   profileData = {
     name: profileName,
@@ -215,27 +239,7 @@ function makeHTML() {
 //   })
 // }
 
-// Function to write HTML to PDF using puppeteer
-async function printPDF(username, html) {
-  try {
-    const browser = await puppeteer.launch();
-    const page = await browser.newPage();
 
-    await page.setContent(html);
-    await page.emulateMedia('screen');
-    await page.pdf({
-      path: `${username}-profile.pdf`,
-      format: 'A4',
-      printBackground: true
-    })
-
-    console.log(`GitHub profile info written to ${username}-profile.pdf`);
-    await browser.close();
-    process.exit();
-  } catch (err) {
-    throw err;
-  }
-}
   
 
 
